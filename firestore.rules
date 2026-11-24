@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidConversation(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.modelId is string && data.modelId.size() >= 1 && data.modelId.size() <= 64 &&
+             data.messageCount is int && data.messageCount >= 0 && data.messageCount <= 100000 &&
+             (!('lastMessagePreview' in data) || data.lastMessagePreview == null || (data.lastMessagePreview is string && data.lastMessagePreview.size() <= 300)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidChatMessage(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.role is string && (data.role == 'USER' || data.role == 'MODEL') &&
+             data.text is string && data.text.size() <= 32000 &&
+             data.modelId is string && data.modelId.size() >= 1 && data.modelId.size() <= 64 &&
+             (!('thinkingText' in data) || data.thinkingText == null || (data.thinkingText is string && data.thinkingText.size() <= 16000)) &&
+             (!('attachmentType' in data) || data.attachmentType == null || (data.attachmentType is string && data.attachmentType in ['IMAGE', 'VIDEO', 'AUDIO', 'FILE', 'GENERATED_IMAGE', 'CODE'])) &&
+             (!('attachmentName' in data) || data.attachmentName == null || (data.attachmentName is string && data.attachmentName.size() <= 255)) &&
+             (!('attachmentUri' in data) || data.attachmentUri == null || (data.attachmentUri is string && data.attachmentUri.size() <= 1024)) &&
+             (!('groundingUrls' in data) || data.groundingUrls == null || (data.groundingUrls is list && data.groundingUrls.size() <= 10 && (data.groundingUrls.size() == 0 || data.groundingUrls[0] is string))) &&
+             (!('mapsPlaceNames' in data) || data.mapsPlaceNames == null || (data.mapsPlaceNames is list && data.mapsPlaceNames.size() <= 10 && (data.mapsPlaceNames.size() == 0 || data.mapsPlaceNames[0] is string))) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /users/{userId}/conversations/{conversationId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(conversationId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(conversationId) &&
+                       incoming().keys().hasAll(['userId', 'title', 'modelId', 'messageCount', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'title', 'modelId', 'lastMessagePreview', 'messageCount', 'createdAt', 'updatedAt']) &&
+                       isValidConversation(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(conversationId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidConversation(incoming(), userId) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['title', 'modelId', 'lastMessagePreview', 'messageCount', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(conversationId);
+
+      match /messages/{messageId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(conversationId) &&
+                         isValidId(messageId) &&
+                         incoming().keys().hasAll(['userId', 'role', 'text', 'modelId', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'role', 'text', 'thinkingText', 'modelId', 'attachmentType', 'attachmentName', 'attachmentUri', 'groundingUrls', 'mapsPlaceNames', 'createdAt']) &&
+                         isValidChatMessage(incoming(), userId) &&
+                         existsAfter(/databases/$(database)/documents/users/$(userId)/conversations/$(conversationId));
+
+        allow update: if false;
+
+        allow delete: if isOwner(userId) && isValidId(conversationId) && isValidId(messageId);
+      }
+    }
+  }
+}

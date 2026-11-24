@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">E-Ishlar-Max</string>
+    <string name="brand_badge">EISHLARAI</string>
+    <string name="owner_credit">Owner: Abdullojon</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="offline_guest_cta">Offline AI rejimida ochish</string>
+    <string name="new_chat">Yangi suhbat</string>
+    <string name="message_hint">E-Ishlar-Max AI ga yozing…</string>
+    <string name="thinking_label">AI Thinking</string>
+    <string name="online_label">Online</string>
+    <string name="offline_label">Offline</string>
+    <string name="download_file">Yuklab olish</string>
+    <string name="share_file">Ulashish</string>
+    <string name="copy_code">Nusxalash</string>
+    <string name="copied_toast">Nusxalandi</string>
+    <string name="mic_permission_needed">Ovoz yozish uchun mikrofon ruxsati kerak.</string>
+</resources>

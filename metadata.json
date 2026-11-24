@@ -1,0 +1,6 @@
+{
+  "name": "E-Ishlar-Max",
+  "description": "Multimodal AI assistant by Abdullojon with web search, maps grounding, image translation, video analysis, voice transcription, image generation, and offline chat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

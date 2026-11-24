@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "ChatConversation": {
+      "title": "ChatConversation",
+      "description": "A user-owned AI chat conversation thread in E-Ishlar-Max.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the conversation owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Short display title of the chat conversation."
+        },
+        "modelId": {
+          "type": "string",
+          "description": "Selected Gemini or Offline model identifier."
+        },
+        "lastMessagePreview": {
+          "type": "string",
+          "description": "Snippet of the latest message in the conversation."
+        },
+        "messageCount": {
+          "type": "integer",
+          "description": "Total number of messages in the conversation."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when conversation was created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when conversation was last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["userId", "title", "modelId", "messageCount", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "An individual message inside a user's conversation.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the message owner."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["USER", "MODEL"],
+          "description": "Message sender role."
+        },
+        "text": {
+          "type": "string",
+          "description": "Message body text or markdown."
+        },
+        "thinkingText": {
+          "type": "string",
+          "description": "Optional AI thinking reasoning trace."
+        },
+        "modelId": {
+          "type": "string",
+          "description": "Model identifier used for this message."
+        },
+        "attachmentType": {
+          "type": "string",
+          "enum": ["IMAGE", "VIDEO", "AUDIO", "FILE", "GENERATED_IMAGE", "CODE"],
+          "description": "Optional attachment category."
+        },
+        "attachmentName": {
+          "type": "string",
+          "description": "Optional attachment display filename."
+        },
+        "attachmentUri": {
+          "type": "string",
+          "description": "Optional local URI or reference path."
+        },
+        "groundingUrls": {
+          "type": "string",
+          "description": "Bounded list (max 10) of grounded web/maps URLs."
+        },
+        "mapsPlaceNames": {
+          "type": "string",
+          "description": "Bounded list (max 10) of grounded Google Maps place labels."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when message was created (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["userId", "role", "text", "modelId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/ChatConversation" },
+      "description": "User-isolated AI chat conversations."
+    },
+    "/users/{userId}/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Messages belonging to a specific user conversation."
+    }
+  }
+}
